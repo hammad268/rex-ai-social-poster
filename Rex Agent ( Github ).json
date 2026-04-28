@@ -1,0 +1,1549 @@
+{
+  "name": "Rex Agent ( Github )",
+  "nodes": [
+    {
+      "parameters": {
+        "text": "=Topic: {{ $('Webhook').item.json.body.topic }}\n\nGenerate a SHORT image prompt (max 50 words) for Pollinations AI.",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "Image Prompt",
+              "description": "Prompt of the Image. Perfect for google/gemini-2.5-flash-image-preview:free model.\nEscape all double quotes inside a JSON string with a backslash (like this: \\\")",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        368
+      ],
+      "id": "21190cd3-5b81-47dc-be6d-36284dacc1fc",
+      "name": "Image Prompt Generator"
+    },
+    {
+      "parameters": {
+        "text": "=Topic: {{ $('Webhook').item.json.body.topic }}\n\nBased on this Topic Generate Perfect And Social Media Platform Based Captions. Don't use (*) this star symbol in the output.",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "Facebook Caption",
+              "description": "Caption for Facebook Post with proper Hashtags",
+              "required": true
+            },
+            {
+              "name": "Instagram Caption",
+              "description": "Caption for Instagram post with proper Hashtags",
+              "required": true
+            },
+            {
+              "name": "Threads Caption",
+              "description": "perfect Thread in less than 500 Characters",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        368
+      ],
+      "id": "01bd0c0c-54ae-4bab-8315-69274a59d5f9",
+      "name": "Text Content Generator"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        448,
+        576
+      ],
+      "id": "0d94b450-e0c8-451c-8a93-b6a4e8415ee9",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -928,
+        368
+      ],
+      "id": "379e9b73-7ccb-4406-a936-01113a39c731",
+      "name": "Wait",
+      "webhookId": "96fc9a23-d78b-4b69-8efb-b73dff614a30"
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.instagram.com/v21.0/me?fields=id,username&access_token= (#INSTAGRAM TOKEN)\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -896,
+        848
+      ],
+      "id": "a6cad11f-bc52-452c-8483-725ab4831e5f",
+      "name": "Get IG User ID"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.instagram.com/v21.0/{{ $('Get IG User ID').item.json.id }}/media",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"image_url\": \"https://image.pollinations.ai/prompt/{{ encodeURIComponent($('Image Prompt Generator').item.json.output['Image Prompt']) }}?model=flux&width=1080&height=1080&nologo=true\",\n  \"caption\": \"{{ $('Text Content Generator').item.json.output['Instagram Caption'] }}\",\n  \"access_token\": \"INSTAGRAM TOKEN\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -640,
+        848
+      ],
+      "id": "7ae96fea-b7a4-478f-bf41-d277ba351212",
+      "name": "Step 1 - Create Container"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.instagram.com/v21.0/{{ $('Get IG User ID').item.json.id }}/media_publish",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"creation_id\": \"{{ $json.id }}\",\n  \"access_token\": \"INSTAGRAM TOKEN\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -96,
+        848
+      ],
+      "id": "04c1d392-dd17-4b94-a4e0-f8c6d9044c78",
+      "name": "Step 2 - Publish Post"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -368,
+        848
+      ],
+      "id": "c0ed4cff-89a4-4fcd-b51e-465dd395711b",
+      "name": "Wait1",
+      "webhookId": "f9160dd9-32d6-42f5-a08d-673d5f5d60f7"
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v19.0/me/accounts?access_token=(#FACEBOOK TOKEN)",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -896,
+        1152
+      ],
+      "id": "21a93e99-cbec-4247-80d9-f2f2eac44584",
+      "name": "FB - Get Page ID"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v19.0/{{ $json.data[0].id }}/photos",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\": \"https://image.pollinations.ai/prompt/{{ encodeURIComponent($('Image Prompt Generator').item.json.output['Image Prompt']) }}?model=flux&width=1080&height=1080&nologo=true\",\n  \"caption\": \"{{ $('Text Content Generator').item.json.output['Instagram Caption'] }}\",\n  \"published\": true,\n  \"access_token\": \"{{ $json.data[0].access_token }}\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -624,
+        1152
+      ],
+      "id": "646aec33-afc0-44eb-856b-b8efd143cb4e",
+      "name": "FB - Publish Post"
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.threads.net/v1.0/me?fields=id,username&access_token=(THREADS TOKEN)",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -896,
+        1472
+      ],
+      "id": "f3786012-616f-4316-9c75-8ab094916276",
+      "name": "Threads - Get User ID"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.threads.net/v1.0/{{ $json.id }}/threads",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"media_type\": \"IMAGE\",\n  \"image_url\": \"https://image.pollinations.ai/prompt/{{ encodeURIComponent($('Image Prompt Generator').item.json.output['Image Prompt']) }}?model=flux&width=1080&height=1080&nologo=true\",\n \"text\": \"{{ $('Text Content Generator').item.json.output['Threads Caption'] }}\",\n  \"access_token\": \"THREAD TOKEN\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -624,
+        1472
+      ],
+      "id": "e333fce7-a863-415e-b405-472f8a79f894",
+      "name": "Threads - Create Container",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "amount": 20
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -352,
+        1472
+      ],
+      "id": "b6e740ff-ec83-4825-bc30-5dafaee7cab8",
+      "name": "Threads - Wait",
+      "webhookId": "5af9547c-38e9-4a72-9821-7d30a371001d"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.threads.net/v1.0/{{ $('Threads - Get User ID').item.json.id }}/threads_publish",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"creation_id\": \"{{ $('Threads - Create Container').item.json.id }}\",\n  \"access_token\": \"(thread token)\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -64,
+        1472
+      ],
+      "id": "3c74c998-70d5-4c42-b546-7a5b2c643fc4",
+      "name": "Threads - Publish Post"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "86b5e927-5105-4707-b89c-4c7119104b12",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -752,
+        16
+      ],
+      "id": "b82f0543-d550-4771-921c-26c734bc8de3",
+      "name": "Webhook",
+      "webhookId": "86b5e927-5105-4707-b89c-4c7119104b12"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        384,
+        0
+      ],
+      "id": "6793e0b0-9ef3-4f2e-b51e-bbeb9453ab68",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "numberInputs": 6
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        720,
+        1104
+      ],
+      "id": "cdd0c6e2-ca14-49e9-8d16-ac4a5ae6779c",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1168,
+        1168
+      ],
+      "id": "7a502150-8f8e-4966-b2dc-5361ad596072",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=\"user1\"",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        208
+      ],
+      "id": "34bb6195-c153-4648-851e-f6c497b06bd6",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      message: \"Post published successfully!\",\n      status: \"done\",\n      results: items.map(item => item.json)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        1168
+      ],
+      "id": "62a21b74-4476-4a64-9ced-2deb565fe1ae",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b15dd9fa-2940-4c91-b761-868a44699824",
+              "name": "mode",
+              "value": "={{ $json.body.mode }}",
+              "type": "string"
+            },
+            {
+              "id": "0956fffb-673d-4d66-a918-130f406a47c8",
+              "name": "message",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -528,
+        16
+      ],
+      "id": "29151c62-403c-4ba4-8a34-faaa110f2c89",
+      "name": "Get Feild From The Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2fa0325a-8453-4f6f-9b00-acd1d4dfd5e3",
+              "leftValue": "={{$json[\"mode\"]}}",
+              "rightValue": "=chat",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -304,
+        16
+      ],
+      "id": "2cf6dce0-7a1c-4336-b88f-5b9e7dd3db85",
+      "name": "2 Branches"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message }}",
+        "options": {
+          "systemMessage": "You are Rex, a smart, friendly, and professional AI assistant.\n\nYour job is to help users in a natural, conversational, and helpful way.\n\nIMPORTANT RULES:\n\n1. Always respond with a clear and complete final answer.\n2. Never show internal thoughts, tool usage, or system messages.\n3. Never say things like \"tool calls executed\" or similar.\n4. Keep responses natural, human-like, and easy to understand.\n5. Be concise but helpful.\n\nMEMORY USAGE:\n\n6. You have access to conversation memory.\n7. Always use previous messages to understand context.\n8. If the user shares personal information (like their name), remember it.\n9. Use remembered information naturally in future replies.\n10. If the user asks something like \"what is my name\", answer using memory.\n\nCONVERSATION STYLE:\n\n11. Be friendly but not overly casual.\n12. Avoid repeating the same phrases.\n13. Do not overuse emojis.\n14. Adapt your tone based on the user's message.\n\nERROR HANDLING:\n\n15. If you don’t know something, say it clearly and offer help.\n16. Never make up user data that was not provided.\n\nOUTPUT FORMAT:\n\n17. Only return the final answer to the user.\n18. Do not include JSON, code, or explanations unless asked.\n\nYour goal is to behave like a high-quality AI assistant similar to ChatGPT."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "bdc8dda6-f32d-49fb-966e-ff1a9bb7ae61",
+      "name": "Rex Chat Agent"
+    },
+    {
+      "parameters": {
+        "url": "=https://image.pollinations.ai/prompt/{{ encodeURIComponent($json.output['Image Prompt']) }}?model=flux&width=1080&height=1080&nologo=true",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -32,
+        368
+      ],
+      "id": "46e9985a-9d05-440f-9b4d-74e628e58032",
+      "name": "Pollination API (Image Genration)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e9bb78dd-0b5d-447f-91db-b99578761e7f",
+              "leftValue": "={{ $binary.data }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        368
+      ],
+      "id": "9d719773-c2c4-495e-af8e-f1ed03fd39c2",
+      "name": "Branches2"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "Email address",
+        "subject": "=Approval for {{ $('Webhook').item.json.body.topic }} Post",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Social Media Captions</title>\n</head>\n<body style=\"margin:0 !important; padding:0 !important; background-color:#f0f4f8; font-family:Arial,sans-serif;\">\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" bgcolor=\"#f0f4f8\">\n  <tr>\n    <td align=\"center\" valign=\"top\" style=\"padding:30px 10px;\">\n\n      <!-- MAIN CARD -->\n      <table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#ffffff; border-radius:20px;\">\n\n        <!-- HEADER BANNER -->\n        <tr>\n          <td align=\"center\" style=\"background-color:#1a237e; border-radius:20px 20px 0 0; padding:36px 40px 30px 40px;\">\n            <p style=\"margin:0 0 8px 0; font-family:Arial,sans-serif; font-size:11px; font-weight:700; color:#7986cb; letter-spacing:3px; text-transform:uppercase;\">Content Package</p>\n            <p style=\"margin:0 0 10px 0; font-family:Arial,sans-serif; font-size:28px; font-weight:700; color:#ffffff;\">Social Media Content</p>\n            <p style=\"margin:0; font-family:Arial,sans-serif; font-size:13px; color:#9fa8da;\">AI-generated captions & visual — ready to publish</p>\n          </td>\n        </tr>\n\n        <!-- PLATFORM ICONS ROW -->\n        <tr>\n          <td align=\"center\" style=\"background-color:#283593; padding:14px 40px;\">\n            <table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n              <tr>\n                <td align=\"center\" style=\"padding:0 14px;\">\n                  <p style=\"margin:0; font-family:Arial,sans-serif; font-size:11px; color:#9fa8da; letter-spacing:1px;\">FACEBOOK</p>\n                </td>\n                <td style=\"color:#3949ab; font-size:16px; padding:0 4px;\">|</td>\n                <td align=\"center\" style=\"padding:0 14px;\">\n                  <p style=\"margin:0; font-family:Arial,sans-serif; font-size:11px; color:#9fa8da; letter-spacing:1px;\">INSTAGRAM</p>\n                </td>\n                <td style=\"color:#3949ab; font-size:16px; padding:0 4px;\">|</td>\n                <td align=\"center\" style=\"padding:0 14px;\">\n                  <p style=\"margin:0; font-family:Arial,sans-serif; font-size:11px; color:#9fa8da; letter-spacing:1px;\">THREADS</p>\n                </td>\n              </tr>\n            </table>\n          </td>\n        </tr>\n\n        <!-- SECTION LABEL -->\n        <tr>\n          <td style=\"padding:28px 36px 10px 36px;\">\n            <p style=\"margin:0; font-family:Arial,sans-serif; font-size:10px; font-weight:700; color:#9e9e9e; letter-spacing:2px; text-transform:uppercase;\">Captions</p>\n          </td>\n        </tr>\n\n        <!-- FACEBOOK -->\n        <tr>\n          <td style=\"padding:8px 36px;\">\n            <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n              <tr>\n                <td style=\"background-color:#e8eaf6; border-radius:12px; padding:0;\">\n                  <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                    <tr>\n                      <td width=\"4\" style=\"background-color:#3f51b5; border-radius:12px 0 0 12px; font-size:0; line-height:0;\">&nbsp;</td>\n                      <td style=\"padding:16px 20px;\">\n                        <table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                          <tr>\n                            <td style=\"background-color:#3f51b5; border-radius:20px; padding:3px 12px;\">\n                              <p style=\"margin:0; font-family:Arial,sans-serif; font-size:10px; font-weight:700; color:#ffffff; letter-spacing:1px;\">FACEBOOK</p>\n                            </td>\n                          </tr>\n                        </table>\n                        <p style=\"margin:10px 0 0 0; font-family:Arial,sans-serif; font-size:14px; color:#333333; line-height:1.7;\">{{ $('Text Content Generator').item.json.output['Facebook Caption'] }}</p>\n                      </td>\n                    </tr>\n                  </table>\n                </td>\n              </tr>\n            </table>\n          </td>\n        </tr>\n\n        <!-- INSTAGRAM -->\n        <tr>\n          <td style=\"padding:8px 36px;\">\n            <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n              <tr>\n                <td style=\"background-color:#fce4ec; border-radius:12px; padding:0;\">\n                  <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                    <tr>\n                      <td width=\"4\" style=\"background-color:#e91e63; border-radius:12px 0 0 12px; font-size:0; line-height:0;\">&nbsp;</td>\n                      <td style=\"padding:16px 20px;\">\n                        <table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                          <tr>\n                            <td style=\"background-color:#e91e63; border-radius:20px; padding:3px 12px;\">\n                              <p style=\"margin:0; font-family:Arial,sans-serif; font-size:10px; font-weight:700; color:#ffffff; letter-spacing:1px;\">INSTAGRAM</p>\n                            </td>\n                          </tr>\n                        </table>\n                        <p style=\"margin:10px 0 0 0; font-family:Arial,sans-serif; font-size:14px; color:#333333; line-height:1.7;\">{{ $('Text Content Generator').item.json.output['Instagram Caption'] }}</p>\n                      </td>\n                    </tr>\n                  </table>\n                </td>\n              </tr>\n            </table>\n          </td>\n        </tr>\n\n        <!-- THREADS -->\n        <tr>\n          <td style=\"padding:8px 36px 24px 36px;\">\n            <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n              <tr>\n                <td style=\"background-color:#e8f5e9; border-radius:12px; padding:0;\">\n                  <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                    <tr>\n                      <td width=\"4\" style=\"background-color:#43a047; border-radius:12px 0 0 12px; font-size:0; line-height:0;\">&nbsp;</td>\n                      <td style=\"padding:16px 20px;\">\n                        <table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                          <tr>\n                            <td style=\"background-color:#43a047; border-radius:20px; padding:3px 12px;\">\n                              <p style=\"margin:0; font-family:Arial,sans-serif; font-size:10px; font-weight:700; color:#ffffff; letter-spacing:1px;\">THREADS</p>\n                            </td>\n                          </tr>\n                        </table>\n                        <p style=\"margin:10px 0 0 0; font-family:Arial,sans-serif; font-size:14px; color:#333333; line-height:1.7;\">{{ $('Text Content Generator').item.json.output['Threads Caption'] }}</p>\n                      </td>\n                    </tr>\n                  </table>\n                </td>\n              </tr>\n            </table>\n          </td>\n        </tr>\n\n        <!-- DIVIDER -->\n        <tr>\n          <td style=\"padding:0 36px;\">\n            <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n              <tr>\n                <td style=\"border-top:1px solid #e0e0e0; font-size:0; line-height:0;\">&nbsp;</td>\n              </tr>\n            </table>\n          </td>\n        </tr>\n\n        <!-- IMAGE SECTION LABEL -->\n        <tr>\n          <td style=\"padding:24px 36px 12px 36px;\">\n            <p style=\"margin:0; font-family:Arial,sans-serif; font-size:10px; font-weight:700; color:#9e9e9e; letter-spacing:2px; text-transform:uppercase;\">Generated Visual</p>\n          </td>\n        </tr>\n\n        <!-- GENERATED IMAGE -->\n        <tr>\n          <td align=\"center\" style=\"padding:0 36px 36px 36px;\">\n            <img src=\"https://image.pollinations.ai/prompt/{{ encodeURIComponent($('Image Prompt Generator').item.json.output['Image Prompt']) }}?model=flux&width=1080&height=1080&nologo=true\"\n                 alt=\"Generated Image\"\n                 width=\"548\"\n                 style=\"display:block; max-width:100%; border-radius:14px;\">\n          </td>\n        </tr>\n\n        <!-- FOOTER -->\n        <tr>\n          <td align=\"center\" style=\"background-color:#f5f5f5; border-radius:0 0 20px 20px; padding:18px 36px;\">\n            <p style=\"margin:0; font-family:Arial,sans-serif; font-size:11px; color:#bdbdbd;\">Generated with AI &nbsp;·&nbsp; Ready to publish</p>\n          </td>\n        </tr>\n\n      </table>\n      <!-- END MAIN CARD -->\n\n    </td>\n  </tr>\n</table>\n\n</body>\n</html>",
+        "responseType": "customForm",
+        "defineForm": "json",
+        "jsonOutput": "[\n  {\n    \"fieldLabel\": \"Action\",\n    \"fieldType\": \"radio\",\n    \"fieldOptions\": {\n      \"values\": [\n        {\n          \"option\": \"Approve\"\n        },\n        {\n          \"option\": \"Regenerate\"\n        },\n        {\n          \"option\": \"Reject\"\n        }\n      ]\n    },\n    \"requiredField\": true\n  }\n]\n",
+        "options": {
+          "limitWaitTime": {
+            "values": {
+              "resumeAmount": 3,
+              "resumeUnit": "minutes"
+            }
+          },
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        352
+      ],
+      "id": "3d923a24-17a2-4a09-b732-df114dce666c",
+      "name": "Sending Mail For Conformation of Post",
+      "webhookId": "63399b09-7a10-44b7-b501-064052f111d1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "wzWAr1FroAXLv1XF",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data.Action }}",
+                    "rightValue": "Approve",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    },
+                    "id": "36244d46-7d7f-4fd2-9023-bfac55d6fc13"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Approve"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "7b03acd8-46d3-44a6-a7e2-479b392a3b63",
+                    "leftValue": "={{ $json.data.Action }}",
+                    "rightValue": "Regenerate",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Regenerate"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d221a551-7bdb-407d-84f5-d7fa3d21e312",
+                    "leftValue": "={{ $json.data.Action }}",
+                    "rightValue": "Reject",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Reject"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        672,
+        352
+      ],
+      "id": "5b38f1f5-5664-4fc1-9caa-108e8d9ad97f",
+      "name": "Swtich To Approve Or Regenrate"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/19F-dNLCoCv0GptzQKMWs5MFLt5Erasn56lIIiWEpCqM/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19F-dNLCoCv0GptzQKMWs5MFLt5Erasn56lIIiWEpCqM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time-Stamp": "={{ $now }}",
+            "Instagram Caption ": "={{ $('Text Content Generator').item.json.output['Instagram Caption'] }}",
+            "Image Caption": "={{ $('Image Prompt Generator').item.json.output['Image Prompt'] }}",
+            "Image link": "=https://image.pollinations.ai/prompt/{{ encodeURIComponent($('Image Prompt Generator').item.json.output['Image Prompt']) }}?model=flux&width=1080&height=1080&nologo=true",
+            "Mail Approvel": "={{ $('Swtich To Approve Or Regenrate').item.json.data.approved }}",
+            "Instagram Status": "=POSTED"
+          },
+          "matchingColumns": [
+            "Image link"
+          ],
+          "schema": [
+            {
+              "id": "Time-Stamp",
+              "displayName": "Time-Stamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Instagram Caption ",
+              "displayName": "Instagram Caption ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Image Caption",
+              "displayName": "Image Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Image link",
+              "displayName": "Image link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Mail Approvel",
+              "displayName": "Mail Approvel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Instagram Status",
+              "displayName": "Instagram Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "locationDefine": {
+            "values": {
+              "headerRow": 4,
+              "firstDataRow": 5
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        160,
+        848
+      ],
+      "id": "395886a3-3a4f-4693-ba14-e319f2da3238",
+      "name": "Appending Data Of Instagram Post",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "bodEc4G4UV80pgHT",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/19F-dNLCoCv0GptzQKMWs5MFLt5Erasn56lIIiWEpCqM/edit?gid=752440689#gid=752440689",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 752440689,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19F-dNLCoCv0GptzQKMWs5MFLt5Erasn56lIIiWEpCqM/edit#gid=752440689"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time-Stamp": "={{ $now }}",
+            "Facebook Caption ": "={{ $('Text Content Generator').item.json.output['Facebook Caption'] }}",
+            "Image Caption": "={{ $('Image Prompt Generator').item.json.output['Image Prompt'] }}",
+            "Image link": "=https://image.pollinations.ai/prompt/{{ encodeURIComponent($('Image Prompt Generator').item.json.output['Image Prompt']) }}?model=flux&width=1080&height=1080&nologo=true",
+            "Mail Approvel": "Approved",
+            "Facebook Status": "={{ $('FB - Publish Post').item.json.id ? 'Posted' : 'Failed' }}"
+          },
+          "matchingColumns": [
+            "Image link"
+          ],
+          "schema": [
+            {
+              "id": "Time-Stamp",
+              "displayName": "Time-Stamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Facebook Caption ",
+              "displayName": "Facebook Caption ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Image Caption",
+              "displayName": "Image Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Image link",
+              "displayName": "Image link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Mail Approvel",
+              "displayName": "Mail Approvel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Facebook Status",
+              "displayName": "Facebook Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "locationDefine": {
+            "values": {
+              "headerRow": 4,
+              "firstDataRow": 5
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -352,
+        1152
+      ],
+      "id": "0c7e08f6-2da4-41e3-995b-a6945c031239",
+      "name": "Appending Data Of Facebook Post",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "bodEc4G4UV80pgHT",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/19F-dNLCoCv0GptzQKMWs5MFLt5Erasn56lIIiWEpCqM/edit?gid=1519859221#gid=1519859221",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1519859221,
+          "mode": "list",
+          "cachedResultName": "Sheet3",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19F-dNLCoCv0GptzQKMWs5MFLt5Erasn56lIIiWEpCqM/edit#gid=1519859221"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time-Stamp": "={{ $now }}",
+            "Threads Caption ": "={{ $('Text Content Generator').item.json.output['Threads Caption'] }}",
+            "Image Caption": "={{ $('Image Prompt Generator').item.json.output['Image Prompt'] }}",
+            "Image link": "=https://image.pollinations.ai/prompt/{{ encodeURIComponent($('Image Prompt Generator').item.json.output['Image Prompt']) }}?model=flux&width=1080&height=1080&nologo=true",
+            "Mail Approvel": "Approved",
+            "Threads Status": "={{ $('Threads - Publish Post').item.json.id ? 'Posted' : 'Failed' }}"
+          },
+          "matchingColumns": [
+            "Image link"
+          ],
+          "schema": [
+            {
+              "id": "Time-Stamp",
+              "displayName": "Time-Stamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Threads Caption ",
+              "displayName": "Threads Caption ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Image Caption",
+              "displayName": "Image Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Image link",
+              "displayName": "Image link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Mail Approvel",
+              "displayName": "Mail Approvel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Threads Status",
+              "displayName": "Threads Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "locationDefine": {
+            "values": {
+              "headerRow": 4,
+              "firstDataRow": 5
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        176,
+        1472
+      ],
+      "id": "641ff6db-1a95-49dc-9201-c01cc0ca6c1e",
+      "name": "Appending Data of Threads Post",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "bodEc4G4UV80pgHT",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{ \"platform\": \"Instagram\", \"status\": \"success\" }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        768
+      ],
+      "id": "4e6a44e9-1e20-4d6a-a5cb-674b6df7ab35",
+      "name": "If posted Success (True)"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={ \"platform\": \"Instagram\", \"status\": \"failed\", \"reason\": \"{{ $json.error.message }}\" }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        960
+      ],
+      "id": "9cbc123e-4a10-4b58-81a9-7874f80d7f62",
+      "name": "If Failed ( False )"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{ \"platform\": \"Facebook\", \"status\": \"success\" }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        96,
+        1072
+      ],
+      "id": "6e66c4e3-6b1b-446d-b694-01e09c9aa8a5",
+      "name": "IF Sucess (True)"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={ \"platform\": \"Facebook\", \"status\": \"failed\", \"reason\": \"{{ $json.error.message }}\" }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        96,
+        1264
+      ],
+      "id": "e336c6f3-e7ab-4a1f-8d95-460cc2c7c6d0",
+      "name": "IF Failed (False)"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{ \"platform\": \"Threads\", \"status\": \"success\" }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        432,
+        1376
+      ],
+      "id": "864ae522-6702-4aac-8bd7-6a85a1294ed1",
+      "name": "IF Success (True)"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={ \"platform\": \"Threads\", \"status\": \"failed\", \"reason\": \"{{ $json.error.message }}\" }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        1600
+      ],
+      "id": "e25d3ba4-ab0c-46a1-821c-d56072881727",
+      "name": "IF Failed (False)1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        592
+      ],
+      "id": "75613737-f071-4c8e-8394-9a675b61ac31",
+      "name": "Ollama Chat Model"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        208
+      ],
+      "id": "6d3cf7ed-89c4-4673-ae14-4b1a9c9531b5",
+      "name": "Ollama Chat Model1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Image Prompt Generator": {
+      "main": [
+        [
+          {
+            "node": "Pollination API (Image Genration)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Content Generator": {
+      "main": [
+        [
+          {
+            "node": "Image Prompt Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Text Content Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get IG User ID": {
+      "main": [
+        [
+          {
+            "node": "Step 1 - Create Container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 1 - Create Container": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Step 2 - Publish Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB - Get Page ID": {
+      "main": [
+        [
+          {
+            "node": "FB - Publish Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Threads - Get User ID": {
+      "main": [
+        [
+          {
+            "node": "Threads - Create Container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Threads - Create Container": {
+      "main": [
+        [
+          {
+            "node": "Threads - Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Threads - Wait": {
+      "main": [
+        [
+          {
+            "node": "Threads - Publish Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB - Publish Post": {
+      "main": [
+        [
+          {
+            "node": "Appending Data Of Facebook Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 2 - Publish Post": {
+      "main": [
+        [
+          {
+            "node": "Appending Data Of Instagram Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Threads - Publish Post": {
+      "main": [
+        [
+          {
+            "node": "Appending Data of Threads Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Feild From The Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Rex Chat Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Feild From The Webhook": {
+      "main": [
+        [
+          {
+            "node": "2 Branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2 Branches": {
+      "main": [
+        [
+          {
+            "node": "Rex Chat Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rex Chat Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pollination API (Image Genration)": {
+      "main": [
+        [
+          {
+            "node": "Branches2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branches2": {
+      "main": [
+        [
+          {
+            "node": "Sending Mail For Conformation of Post",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sending Mail For Conformation of Post": {
+      "main": [
+        [
+          {
+            "node": "Swtich To Approve Or Regenrate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Swtich To Approve Or Regenrate": {
+      "main": [
+        [
+          {
+            "node": "Get IG User ID",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "FB - Get Page ID",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Threads - Get User ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appending Data Of Instagram Post": {
+      "main": [
+        [
+          {
+            "node": "If posted Success (True)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Failed ( False )",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appending Data Of Facebook Post": {
+      "main": [
+        [
+          {
+            "node": "IF Sucess (True)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF Failed (False)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appending Data of Threads Post": {
+      "main": [
+        [
+          {
+            "node": "IF Success (True)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF Failed (False)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If posted Success (True)": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Failed ( False )": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "IF Sucess (True)": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "IF Failed (False)": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "IF Success (True)": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "IF Failed (False)1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Content Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Image Prompt Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Rex Chat Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7acb8002-ef0c-4422-be10-4495e0c0dd36",
+  "meta": {
+    "instanceId": "230cfb34662bec0b93fdd3c5000d1f162a042286b7195f94a41f772213499a3d"
+  },
+  "id": "X1dSiGur9KwfYPqu",
+  "tags": []
+}
